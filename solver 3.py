@@ -1,10 +1,11 @@
 #can solve easy sodoku puzzles when a test of row col and subset square give the possbilities of remaining numbers as 1
 #start as sane code as solver2 decided to wedge in a pygame for better visual of puzzle not great but differnt than the console output
+import random
 
 import numpy as np
 import pygame
-
-
+import time
+backtracks = 0
 
 pygame.init()
 #myFont = pygame.font.SysFont("monospace", 15)
@@ -16,7 +17,8 @@ pygame.display.set_caption("Sodoku")
 
 
 
-
+time.sleep(5)
+start = time.time()
 gridsize = 9
 squareSize = 3
 
@@ -46,7 +48,7 @@ def renderFullGrid():
         for y in range(0,9):
             renderText(grid_np[x][y],x,y)
     pygame.display.update()
-    pygame.time.wait(10)
+   # pygame.time.wait(10)
 
 originalgridEasy = [[2, 0, 0, 0, 7, 0, 0, 0, 0],
                     [0, 0, 0, 1, 0, 2, 7, 3, 4],
@@ -57,6 +59,16 @@ originalgridEasy = [[2, 0, 0, 0, 7, 0, 0, 0, 0],
                     [0, 0, 8, 3, 4, 0, 0, 2, 0],
                     [9, 4, 0, 0, 2, 0, 8, 5, 0],
                     [6, 5, 0, 0, 9, 0, 4, 0, 0]]
+
+originalgridexpert =[[0, 0, 7, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 8, 6, 0, 4, 0, 0],
+                    [2, 0, 0, 0, 0, 1, 6, 0, 3],
+                    [0, 0, 9, 0, 0, 0, 1, 0, 0],
+                    [1, 0, 2, 0, 0, 7, 0, 9, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 6, 0],
+                    [0, 0, 5, 0, 0, 9, 0, 0, 1],
+                    [0, 0, 0, 0, 0, 0, 3, 4, 0],
+                    [0, 0, 0, 3, 0, 0, 2, 0, 0]]
 
 originalgridHard = [[9, 0, 0, 0, 0, 0, 0, 0, 5],
                     [0, 3, 0, 2, 0, 0, 0, 0, 0],
@@ -78,8 +90,31 @@ grid              =[[0,0,4,3,0,0,2,0,9],
                     [0,0,3,5,0,8,6,9,0],
                     [0,4,2,9,1,0,3,0,0]]
 
+
+
+expert =     [[0,0,1,0,0,3,0,0,0],
+              [0,0,0,8,5,0,0,0,0],
+              [0,4,0,0,2,6,8,0,0],
+              [0,7,9,0,0,5,0,0,2],
+              [0,0,2,0,0,0,0,0,0],
+              [5,0,0,0,0,0,0,0,4],
+              [0,0,0,0,0,0,0,2,7],
+              [6,0,0,0,4,0,0,0,0],
+              [0,0,0,1,9,0,6,8,0]]
+
+#https://gizmodo.com/can-you-solve-the-10-hardest-logic-puzzles-ever-created-1064112665
+hardest = [[8,0,0,0,0,0,0,0,0],
+           [0,0,3,6,0,0,0,0,0],
+           [0,7,0,0,9,0,2,0,0],
+           [0,5,0,0,0,7,0,0,0],
+           [0,0,0,0,4,5,7,0,0],
+           [0,0,0,1,0,0,0,3,0],
+           [0,0,1,0,0,0,0,6,8],
+           [0,0,8,5,0,0,0,1,0],
+           [0,9,0,0,0,0,4,0,0]]
+
 #convert to numpy array
-grid_np = np.array(grid)
+grid_np = np.array(hardest)
 renderFullGrid()
 
 
@@ -155,12 +190,32 @@ def printSodoku(grid):
 
 
 def solveWithBacktracking(grid_np):
+    global backtracks
     remaining = np.where(grid_np == 0)
+    listOfRemaining = list(zip(remaining[0], remaining[1]))
+    #random.shuffle(listOfRemaining) #randomization drastically increased time. 
+
     #if no remaining we are done
     if len(remaining[0]) == 0:
         return True
-    row = remaining[0][0]
-    col = remaining[1][0]
+    #print(listOfRemaining)
+    #print(listOfRemaining[0])
+
+
+    shortest = 0
+    qtyOfShortest = 81
+    for i in range(0,len(listOfRemaining)):
+        row = listOfRemaining[i][0]
+        col = listOfRemaining[i][1]
+        temp = len(getCommonElementsByCoord(grid_np, row, col))
+        if temp < qtyOfShortest:
+            shortest = i
+            qtyOfShortest = temp
+
+    row = listOfRemaining[shortest][0]
+    col = listOfRemaining[shortest][1]
+    #row = listOfRemaining[0][0]
+    #col = listOfRemaining[0][1]
 
     availableNumbers = getCommonElementsByCoord(grid_np, row, col)
     for avail in availableNumbers:
@@ -171,8 +226,8 @@ def solveWithBacktracking(grid_np):
 
         #not correct reset value to 0
         grid_np[row][col] = 0
-
-    print("row: ", row, ", col: ", col)
+    backtracks += 1
+    #print("row: ", row, ", col: ", col)
     return False
 
 
@@ -184,7 +239,7 @@ while True:
     remaining = np.where(grid_np == 0)
     listOfRemaining = list(zip(remaining[0],remaining[1]))
     initialRemaining = len(remaining[0])
-    print("count of intial remaining: ", initialRemaining)
+    #print("count of intial remaining: ", initialRemaining)
     for i in listOfRemaining:
         #printSodoku(np.array(grid_np.tolist()))
         #print("remaining cord to test: ", i)
@@ -202,16 +257,23 @@ while True:
     remaining = np.where(grid_np == 0)
     listOfRemaining = list(zip(remaining[0],remaining[1]))
     endRemainingCount = len(remaining[0])
-    print("count of remaining at end ", endRemainingCount)
-    print("added solutions: ", totalAdded)
+    #print("count of remaining at end ", endRemainingCount)
+    #print("added solutions: ", totalAdded)
     printSodoku(np.array(grid_np.tolist()))
     if (endRemainingCount - initialRemaining) == 0:
         break
-for i in range(0, len(remaining)):
-    print(grid_np[0][i])
+#for i in range(0, len(remaining)):
+    #print(grid_np[0][i])
 
 renderFullGrid()
 solveWithBacktracking(grid_np)
+endTime = time.time()
+print("Number of backtracks: ", backtracks)
+
+
+totalTime= time.time() - start
+print("Total Time: ", str(totalTime))
+
 
 run = True
 while run:
